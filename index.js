@@ -18,6 +18,8 @@ const {
 const getLists = () => new Promise((resolve, reject) => lists.all().done(resolve).fail(reject));
 const getTasks = (id, completed = false) => new Promise((resolve, reject) =>
   tasks.forList(id, completed).done(resolve).fail(reject));
+const getNotes = id => new Promise((resolve, reject) =>
+  notes.forTask(id).done(resolve).fail(reject));
 
 const getNewest = (acc, l) => {
   if (!acc) return l;
@@ -25,29 +27,30 @@ const getNewest = (acc, l) => {
   const accTime = Date.parse(acc.created_at).getTime();
   return lTime < accTime ? l : acc;
 };
-const mapNotes = t => notes.forTask(t.id).then(ns => Object.assign(t, {
-  notes: ns,
-}));
-
-getLists().then((ls) => {
+const getLastWorkID = (ls) => {
   const workLists = ls.filter(l => l.title.toLowerCase() === 'work');
   const lastWorkList = workLists.reduce(getNewest);
   return lastWorkList.id;
-}).then(id => Promise.all([getTasks(id), getTasks(id, true)])).then((ts) => {
+};
+const writeTask = (t) => {
+  console.log(t.title);
+  t.notes.forEach(n => console.log(` -${n.content}`));
+};
+const writeTasks = (ts) => {
   console.log('Aufgaben erledigt und offen\n');
   console.log('Offen:');
-  ts[0].forEach(t => console.log(t.title));
+  ts[0].forEach(writeTask);
   console.log('\nErledigt:');
-  ts[1].forEach(t => console.log(t.title));
-});
+  ts[1].forEach(writeTask);
+};
+const addNote = t => getNotes(t.id).then(n => ({ ...t, notes: n }));
+const addNotes = taskArray => Promise.all(taskArray.map(addNote));
 
-// Promise.all(lists.all()).then(ls => Promise.resolve(4)).then(console.log).catch(console.warn);
-// .then((ls) => {
-//   const workLists = ls.filter(l => l.title.toLowerCase() === 'work');
-//   const lastWorkList = workLists.reduce(getNewest);
-//   return tasks.forList(lastWorkList.id);
-// }).then(console.log);
+const getAllTasks = id =>
+  Promise.all([getTasks(id).then(addNotes), getTasks(id, true).then(addNotes)]);
 
 
-// .then(id => ).then(console.log);
-// ts => Promise.all(ts.map(mapNotes)))
+getLists()
+  .then(getLastWorkID)
+  .then(getAllTasks)
+  .then(writeTasks);
