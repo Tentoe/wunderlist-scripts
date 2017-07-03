@@ -14,6 +14,11 @@ const {
   tasks,
 } = wunderlistAPI.http;
 
+
+const getLists = () => new Promise((resolve, reject) => lists.all().done(resolve).fail(reject));
+const getTasks = (id, completed = false) => new Promise((resolve, reject) =>
+  tasks.forList(id, completed).done(resolve).fail(reject));
+
 const getNewest = (acc, l) => {
   if (!acc) return l;
   const lTime = Date.parse(l.created_at).getTime();
@@ -24,7 +29,17 @@ const mapNotes = t => notes.forTask(t.id).then(ns => Object.assign(t, {
   notes: ns,
 }));
 
-lists.all().done(ls => 4).then(console.log);
+getLists().then((ls) => {
+  const workLists = ls.filter(l => l.title.toLowerCase() === 'work');
+  const lastWorkList = workLists.reduce(getNewest);
+  return lastWorkList.id;
+}).then(id => Promise.all([getTasks(id), getTasks(id, true)])).then((ts) => {
+  console.log('Aufgaben erledigt und offen\n');
+  console.log('Offen:');
+  ts[0].forEach(t => console.log(t.title));
+  console.log('\nErledigt:');
+  ts[1].forEach(t => console.log(t.title));
+});
 
 // Promise.all(lists.all()).then(ls => Promise.resolve(4)).then(console.log).catch(console.warn);
 // .then((ls) => {
