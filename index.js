@@ -16,6 +16,10 @@ const {
 
 
 const getLists = () => new Promise((resolve, reject) => lists.all().done(resolve).fail(reject));
+const getList = id => new Promise((resolve, reject) => lists.getID(id).done(resolve).fail(reject));
+const createList = obj =>
+    new Promise((resolve, reject) => lists.create(obj).done(resolve).fail(reject));
+
 const getTasks = (id, completed = false) => new Promise((resolve, reject) =>
   tasks.forList(id, completed).done(resolve).fail(reject));
 const getNotes = id => new Promise((resolve, reject) =>
@@ -50,7 +54,22 @@ const getAllTasks = id =>
   Promise.all([getTasks(id).then(addNotes), getTasks(id, true).then(addNotes)]);
 
 
-getLists()
+const args = process.argv.slice(2);
+
+if (args[0].toLocaleString() === 'report') {
+  getLists()
   .then(getLastWorkID)
   .then(getAllTasks)
-  .then(writeTasks);
+  .then(writeTasks)
+  .then(() => process.exit());
+} else if (args[0].toLocaleString() === 'new') {
+  getLists()
+  .then(getLastWorkID)
+  .then(id => getList(id))
+  .then(console.log);
+  // TODO createList here
+  process.exit();
+} else {
+  console.log('help text');
+  process.exit();
+}
