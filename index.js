@@ -51,6 +51,7 @@ const writeTasks = (ts) => {
   msg += ts[0].reduce(writeTask, '');
   msg += '\n\nErledigt:\n';
   msg += ts[1].reduce(writeTask, '');
+  console.log(msg);
   return encodeUrl(msg);
 };
 const addNote = t => getNotes(t.id).then(n => ({ ...t,
