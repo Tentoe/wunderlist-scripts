@@ -1,9 +1,10 @@
 /* eslint-disable no-alert, no-console, linebreak-style, no-useless-escape */
 import {
-  execFile,
+  exec,
 } from 'child_process';
 import encodeUrl from 'encodeurl';
 import tokenID from './tokenID';
+import fs from 'fs-extra';
 
 const WunderlistSDK = require('wunderlist');
 
@@ -63,13 +64,18 @@ const getAllTasks = id =>
   Promise.all([getTasks(id).then(addNotes), getTasks(id, true).then(addNotes)]);
 
 const openOutlook = (msg) => {
-  execFile('C:\\Program Files (x86)\\Microsoft Office\\Office16\\OUTLOOK.exe', ['/c', 'ipm.note', '/m', msg], () => process.exit());
+  console.log(encodeUrl(msg));
+  // `"${encodeUrl(msg)}"`
+  const m = encodeUrl(msg).replace(/%/g, '%%');
+  const fileName = 'startOutlook.bat';
+  fs.writeFile(`./${fileName}`, `"C:\\Program Files (x86)\\Microsoft Office\\Office16\\OUTLOOK.EXE" /c ipm.note /m "${m}"\nexit`)
+    .then(() => exec(`start ${fileName}`, () => process.exit()));
 };
 
 const args = process.argv.slice(2);
 if (!args[0]) {
   console.log('test');
-  process.exit();
+  exec('start startOutlook.bat', () => process.exit());
 }
 if (args[0] && args[0].toLocaleString() === 'report') {
   getLists()
